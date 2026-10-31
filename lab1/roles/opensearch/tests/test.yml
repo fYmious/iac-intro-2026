@@ -1,0 +1,35 @@
+---
+- name: Test opensearch role
+  hosts: all
+  become: true
+  vars_files:
+    - ../../../group_vars/all/vault.yml
+  roles:
+    - role: opensearch
+  post_tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Check services are enabled and running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['opensearch.service'].state == 'running'
+          - ansible_facts.services['opensearch.service'].status == 'enabled'
+          - ansible_facts.services['opensearch-dashboards.service'].state == 'running'
+          - ansible_facts.services['opensearch-dashboards.service'].status == 'enabled'
+        success_msg: Services are running and enabled
+
+    - name: Query cluster health
+      ansible.builtin.uri:
+        url: "https://127.0.0.1:9200/_cluster/health"
+        url_username: admin
+        url_password: "{{ opensearch_admin_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+      register: opensearch_test_health
+
+    - name: Check cluster status
+      ansible.builtin.assert:
+        that: opensearch_test_health.json.status in ['green', 'yellow']
+        success_msg: "Cluster status is {{ opensearch_test_health.json.status }}"
