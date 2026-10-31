@@ -1,0 +1,6 @@
+---
+- name: Deploy OpenSearch single-node
+  hosts: all
+  become: true
+  roles:
+    - opensearch

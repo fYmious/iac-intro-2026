@@ -1,0 +1,18 @@
+# {{ ansible_managed }}
+cluster.name: {{ opensearch_cluster_name }}
+node.name: {{ opensearch_node_name }}
+path.data: {{ opensearch_data_dir }}
+path.logs: {{ opensearch_log_dir }}
+network.host: {{ opensearch_network_host }}
+http.port: {{ opensearch_http_port }}
+discovery.type: single-node
+
+{% for key, value in opensearch_security_settings.items() %}
+{{ key }}: {{ value | to_json }}
+{% endfor %}
+{% if opensearch_extra_config %}
+
+{% for key, value in opensearch_extra_config.items() %}
+{{ key }}: {{ value | to_json }}
+{% endfor %}
+{% endif %}
