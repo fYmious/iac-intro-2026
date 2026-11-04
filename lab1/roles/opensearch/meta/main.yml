@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  role_name: opensearch
+  author: doschennikov
+  description: Installs and configures OpenSearch and OpenSearch Dashboards (single-node) from official deb packages
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy, noble]
+    - name: Debian
+      versions: [bookworm]
+  galaxy_tags: [opensearch, search, dashboards, logging]
+
+dependencies: []

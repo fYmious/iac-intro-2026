@@ -1,0 +1,119 @@
+---
+- name: Scenario 2 checks
+  block:
+    - name: Prepare an index outside of logs*
+      module_defaults:
+        ansible.builtin.uri:
+          url_username: admin
+          url_password: "{{ opensearch_admin_password }}"
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+      ansible.builtin.uri:
+        url: "{{ os_url }}/private-data/_doc/1?refresh=true"
+        method: PUT
+        body:
+          secret: not for the reader
+        status_code: [200, 201]
+
+    - name: Reader checks
+      module_defaults:
+        ansible.builtin.uri:
+          url_username: reader
+          url_password: "{{ opensearch_reader_password }}"
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+          return_content: true
+      block:
+        - name: Search logs* for the document written in scenario 1
+          ansible.builtin.uri:
+            url: "{{ os_url }}/logs*/_search"
+            method: POST
+            body:
+              query:
+                match_phrase:
+                  message: "{{ test_marker }}"
+          register: t2_search
+
+        - name: The document is found
+          ansible.builtin.assert:
+            that:
+              - t2_search.json.hits.total.value >= 1
+              - t2_search.json.hits.hits | map(attribute='_source.message') | list | select('equalto', test_marker) | list | length >= 1
+            success_msg: "Found {{ t2_search.json.hits.total.value }} document with {{ test_marker }}"
+
+        - name: Try to write to the data stream
+          ansible.builtin.uri:
+            url: "{{ os_url }}/{{ data_stream }}/_doc"
+            method: POST
+            body:
+              message: reader must not write
+            status_code: 403
+          register: t2_write_stream
+
+        - name: Try to write to a new index named like logs*
+          ansible.builtin.uri:
+            url: "{{ os_url }}/logs-reader-index/_doc/1"
+            method: PUT
+            body:
+              message: reader must not write
+            status_code: 403
+          register: t2_write_index
+
+        - name: Try to delete the data stream
+          ansible.builtin.uri:
+            url: "{{ os_url }}/_data_stream/{{ data_stream }}"
+            body_format: raw
+            method: DELETE
+            status_code: 403
+          register: t2_delete_stream
+
+        - name: Try to delete the index behind the data stream
+          ansible.builtin.uri:
+            url: "{{ os_url }}/.ds-{{ data_stream }}-000001"
+            body_format: raw
+            method: DELETE
+            status_code: 403
+          register: t2_delete_index
+
+        - name: Try to read an index outside of logs*
+          ansible.builtin.uri:
+            url: "{{ os_url }}/private-data/_search"
+            body_format: raw
+            status_code: 403
+          register: t2_private
+
+        - name: Writing, deleting and reading other indices are all denied
+          ansible.builtin.assert:
+            that:
+              - t2_write_stream.json.error.type == 'security_exception'
+              - t2_write_index.json.error.type == 'security_exception'
+              - t2_delete_stream.json.error.type == 'security_exception'
+              - t2_delete_index.json.error.type == 'security_exception'
+              - t2_private.json.error.type == 'security_exception'
+            success_msg: All forbidden operations were denied with 403
+
+    - name: Make sure the data stream survived the attempts to delete it
+      module_defaults:
+        ansible.builtin.uri:
+          url_username: admin
+          url_password: "{{ opensearch_admin_password }}"
+          force_basic_auth: true
+          validate_certs: false
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_data_stream/{{ data_stream }}"
+        status_code: 200
+
+  always:
+    - name: Remove the helper index
+      module_defaults:
+        ansible.builtin.uri:
+          url_username: admin
+          url_password: "{{ opensearch_admin_password }}"
+          force_basic_auth: true
+          validate_certs: false
+      ansible.builtin.uri:
+        url: "{{ os_url }}/private-data"
+        method: DELETE
+        status_code: [200, 404]

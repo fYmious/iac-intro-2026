@@ -1,0 +1,52 @@
+---
+- name: Scenario 1 checks as writer
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: writer
+      url_password: "{{ opensearch_writer_password }}"
+      force_basic_auth: true
+      validate_certs: false
+      body_format: json
+      return_content: true
+  block:
+    - name: Write a document to the data stream
+      ansible.builtin.uri:
+        url: "{{ os_url }}/{{ data_stream }}/_doc?refresh=wait_for"
+        method: POST
+        body:
+          "@timestamp": "{{ ansible_facts['date_time']['iso8601'] }}"
+          message: "{{ test_marker }}"
+          level: info
+        status_code: 201
+      register: t1_write
+
+    - name: Document is written
+      ansible.builtin.assert:
+        that: t1_write.json.result == 'created'
+        success_msg: "Document {{ t1_write.json._id }} created in {{ t1_write.json._index }}"
+
+    - name: Try to search as writer
+      ansible.builtin.uri:
+        url: "{{ os_url }}/{{ data_stream }}/_search"
+        body_format: raw
+        status_code: 403
+      register: t1_search
+
+    - name: Search is forbidden for the write role
+      ansible.builtin.assert:
+        that: t1_search.json.error.type == 'security_exception'
+        success_msg: Search was denied with 403
+
+    - name: Try to write to another index
+      ansible.builtin.uri:
+        url: "{{ os_url }}/other-writer-index/_doc"
+        method: POST
+        body:
+          message: should not be written
+        status_code: 403
+      register: t1_other
+
+    - name: Writing to other indices is forbidden
+      ansible.builtin.assert:
+        that: t1_other.json.error.type == 'security_exception'
+        success_msg: Write to another index was denied with 403

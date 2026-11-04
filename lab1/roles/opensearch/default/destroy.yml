@@ -1,0 +1,41 @@
+---
+- name: Destroy
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Stop OpenSearch services if they exist
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - opensearch-dashboards
+        - opensearch
+      failed_when: false
+
+    - name: Remove OpenSearch packages with their files
+      ansible.builtin.apt:
+        name:
+          - opensearch-dashboards
+          - opensearch
+        state: absent
+        purge: true
+
+    - name: Remove leftover directories and drop in files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/opensearch
+        - /etc/opensearch-dashboards
+        - /var/lib/opensearch
+        - /var/log/opensearch
+        - /usr/share/opensearch
+        - /usr/share/opensearch-dashboards
+        - /etc/systemd/system/opensearch.service.d
+        - /etc/systemd/system/opensearch-dashboards.service.d
+
+    - name: Reload systemd after removing drop in files
+      ansible.builtin.systemd:
+        daemon_reload: true
+      failed_when: false
