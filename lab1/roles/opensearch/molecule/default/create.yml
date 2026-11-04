@@ -1,0 +1,8 @@
+---
+- name: Create
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Make sure the test machine is reachable
+      ansible.builtin.wait_for_connection:
+        timeout: 120

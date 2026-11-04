@@ -23,6 +23,11 @@
   ansible.builtin.import_tasks: verify.yml
   tags: [opensearch, opensearch_verify]
 
+- name: Configure security, roles, users and data stream
+  ansible.builtin.import_tasks: security.yml
+  when: opensearch_security_manage | bool
+  tags: [opensearch, opensearch_security]
+
 - name: Install and configure OpenSearch Dashboards
   ansible.builtin.import_tasks: dashboards.yml
   when: opensearch_dashboards_install | bool

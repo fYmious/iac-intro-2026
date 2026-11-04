@@ -22,3 +22,5 @@ opensearch_dashboards_deb_name: "opensearch-dashboards-{{ opensearch_dashboards_
 opensearch_dashboards_deb_url: >-
   {{ opensearch_download_base_url }}/opensearch-dashboards/{{ opensearch_dashboards_version }}/{{ opensearch_dashboards_deb_name }}
 opensearch_dashboards_api_host: "{{ '127.0.0.1' if opensearch_dashboards_host in ['0.0.0.0', '::'] else opensearch_dashboards_host }}"
+
+opensearch_api_url: "https://{{ opensearch_api_host }}:{{ opensearch_http_port }}"
