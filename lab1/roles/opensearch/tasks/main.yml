@@ -15,10 +15,6 @@
   ansible.builtin.import_tasks: configure.yml
   tags: [opensearch, opensearch_configure]
 
-- name: Manage OpenSearch service
-  ansible.builtin.import_tasks: service.yml
-  tags: [opensearch, opensearch_service]
-
 - name: Verify OpenSearch readiness
   ansible.builtin.import_tasks: verify.yml
   tags: [opensearch, opensearch_verify]

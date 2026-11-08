@@ -8,9 +8,3 @@ opensearch.ssl.verificationMode: {{ 'full' if opensearch_validate_certs else 'no
 opensearch.username: {{ opensearch_dashboards_os_user | to_json }}
 opensearch.password: {{ opensearch_dashboards_os_password | to_json }}
 opensearch.requestHeadersAllowlist: ["securitytenant", "Authorization"]
-{% if opensearch_dashboards_extra_config %}
-
-{% for key, value in opensearch_dashboards_extra_config.items() %}
-{{ key }}: {{ value | to_json }}
-{% endfor %}
-{% endif %}

@@ -2,6 +2,10 @@
 opensearch_config_dir: /etc/opensearch
 opensearch_dashboards_config_dir: /etc/opensearch-dashboards
 opensearch_download_dir: /var/cache/opensearch-lab
+opensearch_download_base_url: "https://artifacts.opensearch.org/releases/bundle"
+
+opensearch_vm_max_map_count: 262144
+opensearch_nofile_limit: 65535
 
 opensearch_prereq_packages:
   - ca-certificates

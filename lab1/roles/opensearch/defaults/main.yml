@@ -1,7 +1,6 @@
 ---
 opensearch_version: "3.8.0"
 opensearch_dashboards_version: "{{ opensearch_version }}"
-opensearch_download_base_url: "https://artifacts.opensearch.org/releases/bundle"
 
 opensearch_dashboards_install: true
 
@@ -17,16 +16,9 @@ opensearch_dashboards_host: "0.0.0.0"
 opensearch_dashboards_port: 5601
 
 opensearch_heap_size: "1g"
-opensearch_vm_max_map_count: 262144
-opensearch_nofile_limit: 65535
 
 opensearch_data_dir: "/var/lib/opensearch"
 opensearch_log_dir: "/var/log/opensearch"
-
-opensearch_extra_config: {}
-
-opensearch_service_enabled: true
-opensearch_service_state: "started"
 
 opensearch_wait_retries: 30
 opensearch_wait_delay: 10
@@ -34,24 +26,3 @@ opensearch_validate_certs: false
 opensearch_expected_status: ["green", "yellow"]
 
 opensearch_compliance_salt: "WN2yviiGAwWPWO3m"
-
-opensearch_security_settings:
-  plugins.security.ssl.transport.pemcert_filepath: esnode.pem
-  plugins.security.ssl.transport.pemkey_filepath: esnode-key.pem
-  plugins.security.ssl.transport.pemtrustedcas_filepath: root-ca.pem
-  transport.ssl.enforce_hostname_verification: false
-  plugins.security.ssl.http.enabled: true
-  plugins.security.ssl.http.pemcert_filepath: esnode.pem
-  plugins.security.ssl.http.pemkey_filepath: esnode-key.pem
-  plugins.security.ssl.http.pemtrustedcas_filepath: root-ca.pem
-  plugins.security.allow_unsafe_democertificates: true
-  plugins.security.compliance.salt: "{{ opensearch_compliance_salt }}"
-  plugins.security.allow_default_init_securityindex: true
-  plugins.security.authcz.admin_dn: ["CN=kirk,OU=client,O=client,L=test,C=de"]
-  plugins.security.audit.type: internal_opensearch
-  plugins.security.enable_snapshot_restore_privilege: true
-  plugins.security.check_snapshot_restore_write_privileges: true
-  plugins.security.restapi.roles_enabled: ["all_access", "security_rest_api_access"]
-  plugins.security.system_indices.enabled: true
-
-opensearch_dashboards_extra_config: {}

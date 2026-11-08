@@ -41,7 +41,9 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart opensearch
+  notify:
+    - Reload systemd
+    - Restart opensearch
 
 - name: Install restart policy drop-in for OpenSearch
   ansible.builtin.copy:
@@ -50,4 +52,15 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart opensearch
+  notify:
+    - Reload systemd
+    - Restart opensearch
+
+- name: Apply pending configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable OpenSearch at boot and make sure it is started
+  ansible.builtin.systemd:
+    name: opensearch
+    enabled: true
+    state: started

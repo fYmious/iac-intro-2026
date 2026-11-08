@@ -7,12 +7,20 @@ network.host: {{ opensearch_network_host }}
 http.port: {{ opensearch_http_port }}
 discovery.type: single-node
 
-{% for key, value in opensearch_security_settings.items() %}
-{{ key }}: {{ value | to_json }}
-{% endfor %}
-{% if opensearch_extra_config %}
-
-{% for key, value in opensearch_extra_config.items() %}
-{{ key }}: {{ value | to_json }}
-{% endfor %}
-{% endif %}
+plugins.security.ssl.transport.pemcert_filepath: "esnode.pem"
+plugins.security.ssl.transport.pemkey_filepath: "esnode-key.pem"
+plugins.security.ssl.transport.pemtrustedcas_filepath: "root-ca.pem"
+transport.ssl.enforce_hostname_verification: false
+plugins.security.ssl.http.enabled: true
+plugins.security.ssl.http.pemcert_filepath: "esnode.pem"
+plugins.security.ssl.http.pemkey_filepath: "esnode-key.pem"
+plugins.security.ssl.http.pemtrustedcas_filepath: "root-ca.pem"
+plugins.security.allow_unsafe_democertificates: true
+plugins.security.compliance.salt: {{ opensearch_compliance_salt | to_json }}
+plugins.security.allow_default_init_securityindex: true
+plugins.security.authcz.admin_dn: ["CN=kirk,OU=client,O=client,L=test,C=de"]
+plugins.security.audit.type: "internal_opensearch"
+plugins.security.enable_snapshot_restore_privilege: true
+plugins.security.check_snapshot_restore_write_privileges: true
+plugins.security.restapi.roles_enabled: ["all_access", "security_rest_api_access"]
+plugins.security.system_indices.enabled: true

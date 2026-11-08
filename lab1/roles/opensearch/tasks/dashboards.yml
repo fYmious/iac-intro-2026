@@ -38,7 +38,9 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart opensearch-dashboards
+  notify:
+    - Reload systemd
+    - Restart opensearch-dashboards
 
 - name: Apply pending Dashboards configuration changes
   ansible.builtin.meta: flush_handlers
@@ -46,8 +48,8 @@
 - name: Enable Dashboards at boot and ensure desired state
   ansible.builtin.systemd:
     name: opensearch-dashboards
-    enabled: "{{ opensearch_service_enabled }}"
-    state: "{{ opensearch_service_state }}"
+    enabled: true
+    state: started
 
 - name: Wait for Dashboards API
   ansible.builtin.uri:
@@ -60,4 +62,3 @@
   until: opensearch_dashboards_status.status | default(-1) == 200
   retries: "{{ opensearch_wait_retries }}"
   delay: "{{ opensearch_wait_delay }}"
-  when: opensearch_service_state == 'started'
