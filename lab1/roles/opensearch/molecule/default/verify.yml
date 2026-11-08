@@ -1,0 +1,27 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    os_url: "https://127.0.0.1:9200"
+    dashboards_url: "http://127.0.0.1:5601"
+    expected_version: "3.8.0"
+    expected_cluster_name: "opensearch-lab"
+    data_stream: "logs"
+  pre_tasks:
+    - name: Prepare a unique marker for the test document
+      ansible.builtin.set_fact:
+        test_marker: "molecule-{{ ansible_facts['date_time']['epoch'] }}"
+
+  tasks:
+    - name: Scenario 0, the service works and is not just started
+      ansible.builtin.import_tasks: tests/test0_service.yml
+
+    - name: Scenario 1, user with the write role
+      ansible.builtin.import_tasks: tests/test1_writer.yml
+
+    - name: Scenario 2, user with the read role
+      ansible.builtin.import_tasks: tests/test2_reader.yml
+
+    - name: Scenario 3, cluster administrator
+      ansible.builtin.import_tasks: tests/test3_operator.yml

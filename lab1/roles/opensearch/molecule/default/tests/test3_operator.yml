@@ -1,0 +1,98 @@
+---
+- name: Scenario 3 checks as operator
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: operator
+      url_password: "{{ opensearch_operator_password }}"
+      force_basic_auth: true
+      validate_certs: false
+      body_format: json
+      return_content: true
+  block:
+    - name: Get cluster settings
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_cluster/settings"
+        body_format: raw
+      register: t3_settings
+
+    - name: Settings are returned
+      ansible.builtin.assert:
+        that: "'persistent' in t3_settings.json"
+        success_msg: Cluster settings received
+
+    - name: Get cluster state
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_cluster/state?filter_path=cluster_name,cluster_uuid"
+        body_format: raw
+      register: t3_state
+
+    - name: State belongs to our cluster
+      ansible.builtin.assert:
+        that:
+          - t3_state.json.cluster_name == expected_cluster_name
+          - t3_state.json.cluster_uuid | length > 0
+        success_msg: "Cluster state received, uuid {{ t3_state.json.cluster_uuid }}"
+
+    - name: Get OpenSearch version
+      ansible.builtin.uri:
+        url: "{{ os_url }}"
+        body_format: raw
+      register: t3_root
+
+    - name: Version is the expected one
+      ansible.builtin.assert:
+        that: t3_root.json.version.number == expected_version
+        success_msg: "OpenSearch version is {{ t3_root.json.version.number }}"
+
+    - name: Change a cluster setting
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_cluster/settings"
+        method: PUT
+        body:
+          persistent:
+            cluster.max_shards_per_node: 1100
+      register: t3_change
+
+    - name: Setting change is accepted
+      ansible.builtin.assert:
+        that: t3_change.json.acknowledged
+        success_msg: Cluster setting was changed by the operator
+
+    - name: Try to search logs*
+      ansible.builtin.uri:
+        url: "{{ os_url }}/logs*/_search"
+        body_format: raw
+        status_code: 403
+      register: t3_search
+
+    - name: Try to write to the data stream
+      ansible.builtin.uri:
+        url: "{{ os_url }}/{{ data_stream }}/_doc"
+        method: POST
+        body:
+          message: operator must not write
+        status_code: 403
+      register: t3_write
+
+    - name: Operator has no access to the data
+      ansible.builtin.assert:
+        that:
+          - t3_search.json.error.type == 'security_exception'
+          - t3_write.json.error.type == 'security_exception'
+        success_msg: Reading and writing data were denied with 403
+
+  always:
+    - name: Return the changed setting to its default
+      module_defaults:
+        ansible.builtin.uri:
+          url_username: operator
+          url_password: "{{ opensearch_operator_password }}"
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_cluster/settings"
+        method: PUT
+        body:
+          persistent:
+            cluster.max_shards_per_node: null

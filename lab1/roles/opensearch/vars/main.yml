@@ -1,0 +1,30 @@
+---
+opensearch_config_dir: /etc/opensearch
+opensearch_dashboards_config_dir: /etc/opensearch-dashboards
+opensearch_download_dir: /var/cache/opensearch-lab
+opensearch_download_base_url: "https://artifacts.opensearch.org/releases/bundle"
+
+opensearch_vm_max_map_count: 262144
+opensearch_nofile_limit: 65535
+
+opensearch_prereq_packages:
+  - ca-certificates
+  - curl
+  - python3-apt
+
+opensearch_arch_map:
+  x86_64: x64
+  aarch64: arm64
+opensearch_arch: "{{ opensearch_arch_map[ansible_facts['architecture']] }}"
+
+opensearch_deb_name: "opensearch-{{ opensearch_version }}-linux-{{ opensearch_arch }}.deb"
+opensearch_deb_url: "{{ opensearch_download_base_url }}/opensearch/{{ opensearch_version }}/{{ opensearch_deb_name }}"
+
+opensearch_api_host: "{{ '127.0.0.1' if opensearch_network_host in ['0.0.0.0', '::'] else opensearch_network_host }}"
+
+opensearch_dashboards_deb_name: "opensearch-dashboards-{{ opensearch_dashboards_version }}-linux-{{ opensearch_arch }}.deb"
+opensearch_dashboards_deb_url: >-
+  {{ opensearch_download_base_url }}/opensearch-dashboards/{{ opensearch_dashboards_version }}/{{ opensearch_dashboards_deb_name }}
+opensearch_dashboards_api_host: "{{ '127.0.0.1' if opensearch_dashboards_host in ['0.0.0.0', '::'] else opensearch_dashboards_host }}"
+
+opensearch_api_url: "https://{{ opensearch_api_host }}:{{ opensearch_http_port }}"

@@ -1,0 +1,116 @@
+---
+- name: Scenario 0 checks as administrator
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: admin
+      url_password: "{{ opensearch_admin_password }}"
+      force_basic_auth: true
+      validate_certs: false
+      return_content: true
+  block:
+    - name: Collect service facts
+      ansible.builtin.service_facts:
+
+    - name: Services are running and enabled at boot
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['opensearch.service'].state == 'running'
+          - ansible_facts.services['opensearch.service'].status == 'enabled'
+          - ansible_facts.services['opensearch-dashboards.service'].state == 'running'
+          - ansible_facts.services['opensearch-dashboards.service'].status == 'enabled'
+        success_msg: OpenSearch and Dashboards are running and enabled
+
+    - name: OpenSearch and Dashboards ports accept connections
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ item }}"
+        timeout: 30
+      loop: [9200, 5601]
+
+    - name: API without a password is closed
+      ansible.builtin.uri:
+        url: "{{ os_url }}"
+        url_username: ""
+        url_password: ""
+        force_basic_auth: false
+        status_code: 401
+      register: t0_anonymous
+
+    - name: Anonymous access is denied
+      ansible.builtin.assert:
+        that: t0_anonymous.status == 401
+        success_msg: Anonymous request got 401
+
+    - name: Ask OpenSearch for its version
+      ansible.builtin.uri:
+        url: "{{ os_url }}"
+      register: t0_root
+
+    - name: Version and cluster name are as expected
+      ansible.builtin.assert:
+        that:
+          - t0_root.json.version.number == expected_version
+          - t0_root.json.version.distribution == 'opensearch'
+          - t0_root.json.cluster_name == expected_cluster_name
+        success_msg: "OpenSearch {{ t0_root.json.version.number }}, cluster {{ t0_root.json.cluster_name }}"
+
+    - name: Ask for cluster health
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_cluster/health"
+      register: t0_health
+
+    - name: Cluster is healthy
+      ansible.builtin.assert:
+        that:
+          - t0_health.json.status in ['green', 'yellow']
+          - not t0_health.json.timed_out
+          - t0_health.json.number_of_nodes == 1
+          - t0_health.json.unassigned_shards == 0
+        success_msg: "Cluster status is {{ t0_health.json.status }}, one node, no unassigned shards"
+
+    - name: Read the kernel setting required by OpenSearch
+      ansible.builtin.command: sysctl -n vm.max_map_count
+      register: t0_map_count
+      changed_when: false
+
+    - name: Kernel setting is high enough
+      ansible.builtin.assert:
+        that: t0_map_count.stdout | int >= 262144
+        success_msg: "vm.max_map_count is {{ t0_map_count.stdout }}"
+
+    - name: Ask for roles and users known to the security plugin
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_plugins/_security/api/{{ item }}"
+      loop: [roles, internalusers]
+      register: t0_security
+
+    - name: Security objects from the role are present
+      ansible.builtin.assert:
+        that:
+          - "'logs_writer' in t0_security.results[0].json"
+          - "'logs_reader' in t0_security.results[0].json"
+          - "'cluster_operator' in t0_security.results[0].json"
+          - "'writer' in t0_security.results[1].json"
+          - "'reader' in t0_security.results[1].json"
+          - "'operator' in t0_security.results[1].json"
+        success_msg: Three roles and three users exist
+
+    - name: Ask for the data stream
+      ansible.builtin.uri:
+        url: "{{ os_url }}/_data_stream/{{ data_stream }}"
+      register: t0_stream
+
+    - name: Data stream exists
+      ansible.builtin.assert:
+        that: t0_stream.json.data_streams | map(attribute='name') | list == [data_stream]
+        success_msg: "Data stream {{ data_stream }} exists"
+
+    - name: Ask Dashboards for its status
+      ansible.builtin.uri:
+        url: "{{ dashboards_url }}/api/status"
+      register: t0_dashboards
+
+    - name: Dashboards answer
+      ansible.builtin.assert:
+        that: t0_dashboards.status == 200
+        success_msg: Dashboards API answers 200

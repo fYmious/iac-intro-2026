@@ -1,0 +1,66 @@
+---
+- name: Ensure data and log directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: opensearch
+    group: opensearch
+    mode: "0750"
+  loop:
+    - "{{ opensearch_data_dir }}"
+    - "{{ opensearch_log_dir }}"
+
+- name: Render opensearch.yml
+  ansible.builtin.template:
+    src: opensearch.yml.j2
+    dest: "{{ opensearch_config_dir }}/opensearch.yml"
+    owner: opensearch
+    group: opensearch
+    mode: "0640"
+  notify: Restart opensearch
+
+- name: Render JVM heap settings
+  ansible.builtin.template:
+    src: heap.options.j2
+    dest: "{{ opensearch_config_dir }}/jvm.options.d/heap.options"
+    owner: opensearch
+    group: opensearch
+    mode: "0640"
+  notify: Restart opensearch
+
+- name: Create systemd drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/opensearch.service.d
+    state: directory
+    mode: "0755"
+
+- name: Render systemd drop-in with limits
+  ansible.builtin.template:
+    src: opensearch-limits.conf.j2
+    dest: /etc/systemd/system/opensearch.service.d/limits.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart opensearch
+
+- name: Install restart policy drop-in for OpenSearch
+  ansible.builtin.copy:
+    src: restart-policy.conf
+    dest: /etc/systemd/system/opensearch.service.d/restart-policy.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart opensearch
+
+- name: Apply pending configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable OpenSearch at boot and make sure it is started
+  ansible.builtin.systemd:
+    name: opensearch
+    enabled: true
+    state: started

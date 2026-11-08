@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+server.host: {{ opensearch_dashboards_host | to_json }}
+server.port: {{ opensearch_dashboards_port }}
+server.name: {{ opensearch_node_name | to_json }}
+
+opensearch.hosts: ["https://{{ opensearch_api_host }}:{{ opensearch_http_port }}"]
+opensearch.ssl.verificationMode: {{ 'full' if opensearch_validate_certs else 'none' }}
+opensearch.username: {{ opensearch_dashboards_os_user | to_json }}
+opensearch.password: {{ opensearch_dashboards_os_password | to_json }}
+opensearch.requestHeadersAllowlist: ["securitytenant", "Authorization"]

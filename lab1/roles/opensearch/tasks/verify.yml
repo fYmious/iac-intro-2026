@@ -1,0 +1,21 @@
+---
+- name: Wait for OpenSearch API and acceptable cluster status
+  ansible.builtin.uri:
+    url: "https://{{ opensearch_api_host }}:{{ opensearch_http_port }}/_cluster/health"
+    method: GET
+    url_username: admin
+    url_password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ opensearch_validate_certs }}"
+    return_content: true
+  register: opensearch_health
+  until:
+    - opensearch_health.status | default(-1) == 200
+    - opensearch_health.json.status | default('') in opensearch_expected_status
+  retries: "{{ opensearch_wait_retries }}"
+  delay: "{{ opensearch_wait_delay }}"
+
+- name: Show cluster health
+  ansible.builtin.debug:
+    var: opensearch_health.json
+  when: opensearch_health.json is defined

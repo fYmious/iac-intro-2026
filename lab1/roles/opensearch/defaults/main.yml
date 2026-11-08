@@ -1,0 +1,76 @@
+---
+opensearch_version: "3.8.0"
+opensearch_dashboards_version: "{{ opensearch_version }}"
+
+opensearch_dashboards_install: true
+
+opensearch_admin_password: ""
+opensearch_dashboards_os_user: "kibanaserver"
+opensearch_dashboards_os_password: "kibanaserver"
+
+opensearch_cluster_name: "opensearch-lab"
+opensearch_node_name: "{{ inventory_hostname }}"
+opensearch_network_host: "127.0.0.1"
+opensearch_http_port: 9200
+opensearch_dashboards_host: "0.0.0.0"
+opensearch_dashboards_port: 5601
+
+opensearch_heap_size: "1g"
+
+opensearch_data_dir: "/var/lib/opensearch"
+opensearch_log_dir: "/var/log/opensearch"
+
+opensearch_wait_retries: 30
+opensearch_wait_delay: 10
+opensearch_validate_certs: false
+opensearch_expected_status: ["green", "yellow"]
+
+opensearch_compliance_salt: "WN2yviiGAwWPWO3m"
+
+opensearch_security_manage: true
+
+opensearch_writer_password: ""
+opensearch_reader_password: ""
+opensearch_operator_password: ""
+
+opensearch_data_stream: "logs"
+opensearch_index_template_name: "logs-template"
+opensearch_index_template_priority: 200
+opensearch_data_stream_shards: 1
+opensearch_data_stream_replicas: 0
+
+opensearch_security_roles:
+  logs_writer:
+    cluster_permissions:
+      - "indices:data/write/bulk"
+    index_permissions:
+      - index_patterns:
+          - "{{ opensearch_data_stream }}"
+          - ".ds-{{ opensearch_data_stream }}-*"
+        allowed_actions:
+          - "indices:data/write/index"
+          - "indices:data/write/bulk*"
+          - "indices:admin/mapping/auto_put"
+  logs_reader:
+    cluster_permissions: []
+    index_permissions:
+      - index_patterns:
+          - "logs*"
+        allowed_actions:
+          - "read"
+  cluster_operator:
+    cluster_permissions:
+      - "cluster_monitor"
+      - "cluster:admin/settings/update"
+    index_permissions: []
+
+opensearch_security_users:
+  - name: "writer"
+    password: "{{ opensearch_writer_password }}"
+    role: "logs_writer"
+  - name: "reader"
+    password: "{{ opensearch_reader_password }}"
+    role: "logs_reader"
+  - name: "operator"
+    password: "{{ opensearch_operator_password }}"
+    role: "cluster_operator"

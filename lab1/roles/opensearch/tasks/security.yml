@@ -1,0 +1,51 @@
+---
+- name: Configure roles and users through the REST API
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: admin
+      url_password: "{{ opensearch_admin_password }}"
+      force_basic_auth: true
+      validate_certs: "{{ opensearch_validate_certs }}"
+      body_format: json
+  block:
+    - name: Create or update roles
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_plugins/_security/api/roles/{{ item.key }}"
+        method: PUT
+        status_code: [200, 201]
+        body: "{{ item.value }}"
+      loop: "{{ opensearch_security_roles | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      register: opensearch_roles_result
+      changed_when: opensearch_roles_result.json.status | default('') == 'CREATED'
+
+    - name: Create or update users
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_plugins/_security/api/internalusers/{{ item.name }}"
+        method: PUT
+        status_code: [200, 201]
+        body:
+          password: "{{ item.password }}"
+          backend_roles: []
+          attributes: {}
+      loop: "{{ opensearch_security_users }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: opensearch_users_result
+      changed_when: opensearch_users_result.json.status | default('') == 'CREATED'
+      no_log: true
+
+    - name: Map roles to users
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_plugins/_security/api/rolesmapping/{{ item.role }}"
+        method: PUT
+        status_code: [200, 201]
+        body:
+          users:
+            - "{{ item.name }}"
+      loop: "{{ opensearch_security_users }}"
+      loop_control:
+        label: "{{ item.role }} to {{ item.name }}"
+      register: opensearch_mapping_result
+      changed_when: opensearch_mapping_result.json.status | default('') == 'CREATED'

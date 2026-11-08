@@ -1,0 +1,64 @@
+---
+- name: Download OpenSearch Dashboards deb package
+  ansible.builtin.get_url:
+    url: "{{ opensearch_dashboards_deb_url }}"
+    dest: "{{ opensearch_download_dir }}/{{ opensearch_dashboards_deb_name }}"
+    mode: "0644"
+    timeout: 300
+  register: opensearch_dashboards_download
+  retries: 3
+  delay: 10
+  until: opensearch_dashboards_download is succeeded
+
+- name: Install OpenSearch Dashboards package
+  ansible.builtin.apt:
+    deb: "{{ opensearch_download_dir }}/{{ opensearch_dashboards_deb_name }}"
+    state: present
+
+- name: Render opensearch_dashboards.yml
+  ansible.builtin.template:
+    src: opensearch_dashboards.yml.j2
+    dest: "{{ opensearch_dashboards_config_dir }}/opensearch_dashboards.yml"
+    owner: opensearch-dashboards
+    group: opensearch-dashboards
+    mode: "0640"
+  no_log: true
+  notify: Restart opensearch-dashboards
+
+- name: Create systemd drop-in directory for Dashboards
+  ansible.builtin.file:
+    path: /etc/systemd/system/opensearch-dashboards.service.d
+    state: directory
+    mode: "0755"
+
+- name: Install restart policy drop-in for Dashboards
+  ansible.builtin.copy:
+    src: restart-policy.conf
+    dest: /etc/systemd/system/opensearch-dashboards.service.d/restart-policy.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart opensearch-dashboards
+
+- name: Apply pending Dashboards configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable Dashboards at boot and ensure desired state
+  ansible.builtin.systemd:
+    name: opensearch-dashboards
+    enabled: true
+    state: started
+
+- name: Wait for Dashboards API
+  ansible.builtin.uri:
+    url: "http://{{ opensearch_dashboards_api_host }}:{{ opensearch_dashboards_port }}/api/status"
+    url_username: admin
+    url_password: "{{ opensearch_admin_password }}"
+    force_basic_auth: true
+    status_code: 200
+  register: opensearch_dashboards_status
+  until: opensearch_dashboards_status.status | default(-1) == 200
+  retries: "{{ opensearch_wait_retries }}"
+  delay: "{{ opensearch_wait_delay }}"
