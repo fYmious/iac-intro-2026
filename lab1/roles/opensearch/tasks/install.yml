@@ -1,0 +1,25 @@
+---
+- name: Create directory for downloaded packages
+  ansible.builtin.file:
+    path: "{{ opensearch_download_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Download OpenSearch deb package
+  ansible.builtin.get_url:
+    url: "{{ opensearch_deb_url }}"
+    dest: "{{ opensearch_download_dir }}/{{ opensearch_deb_name }}"
+    mode: "0644"
+    timeout: 300
+  register: opensearch_download
+  retries: 3
+  delay: 10
+  until: opensearch_download is succeeded
+
+- name: Install OpenSearch package
+  ansible.builtin.apt:
+    deb: "{{ opensearch_download_dir }}/{{ opensearch_deb_name }}"
+    state: present
+  environment:
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: "{{ opensearch_admin_password }}"
+  no_log: true

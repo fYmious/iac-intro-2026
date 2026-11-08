@@ -1,0 +1,12 @@
+#cloud-config
+hostname: os-lab
+users:
+  - name: ansible
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPrEjPI3tzK1p2Lc57JHmZ/lYyppFmDrFGJ9fe/ohprn fymio@fymio
+
+
+
+

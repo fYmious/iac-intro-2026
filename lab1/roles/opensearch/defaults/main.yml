@@ -1,0 +1,28 @@
+---
+opensearch_version: "3.8.0"
+opensearch_dashboards_version: "{{ opensearch_version }}"
+
+opensearch_dashboards_install: true
+
+opensearch_admin_password: ""
+opensearch_dashboards_os_user: "kibanaserver"
+opensearch_dashboards_os_password: "kibanaserver"
+
+opensearch_cluster_name: "opensearch-lab"
+opensearch_node_name: "{{ inventory_hostname }}"
+opensearch_network_host: "127.0.0.1"
+opensearch_http_port: 9200
+opensearch_dashboards_host: "0.0.0.0"
+opensearch_dashboards_port: 5601
+
+opensearch_heap_size: "1g"
+
+opensearch_data_dir: "/var/lib/opensearch"
+opensearch_log_dir: "/var/log/opensearch"
+
+opensearch_wait_retries: 30
+opensearch_wait_delay: 10
+opensearch_validate_certs: false
+opensearch_expected_status: ["green", "yellow"]
+
+opensearch_compliance_salt: "WN2yviiGAwWPWO3m"
