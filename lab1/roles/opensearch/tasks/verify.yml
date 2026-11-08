@@ -14,7 +14,6 @@
     - opensearch_health.json.status | default('') in opensearch_expected_status
   retries: "{{ opensearch_wait_retries }}"
   delay: "{{ opensearch_wait_delay }}"
-  when: opensearch_service_state == 'started'
 
 - name: Show cluster health
   ansible.builtin.debug:

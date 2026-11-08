@@ -15,15 +15,16 @@
   ansible.builtin.import_tasks: configure.yml
   tags: [opensearch, opensearch_configure]
 
-- name: Manage OpenSearch service
-  ansible.builtin.import_tasks: service.yml
-  tags: [opensearch, opensearch_service]
-
 - name: Verify OpenSearch readiness
   ansible.builtin.import_tasks: verify.yml
   tags: [opensearch, opensearch_verify]
 
-- name: Configure security, roles, users and data stream
+- name: Configure the index template and the data stream
+  ansible.builtin.import_tasks: index.yml
+  when: opensearch_security_manage | bool
+  tags: [opensearch, opensearch_index]
+
+- name: Configure security roles and users
   ansible.builtin.import_tasks: security.yml
   when: opensearch_security_manage | bool
   tags: [opensearch, opensearch_security]

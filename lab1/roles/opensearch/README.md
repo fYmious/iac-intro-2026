@@ -1,23 +1,23 @@
 # Роль opensearch
 
-Роль ставит и настраивает OpenSearch и OpenSearch Dashboards из официальных пакетов `.deb` на одну машину с Debian или Ubuntu. Кластер получается из одного узла. Полный отчёт с проверками и скриншотами лежит в `README.md` в корне проекта.
+Роль ставит и настраивает openSearch и opensearch dashboards из официальных пакетов `.deb` на одну машину с debian или ubuntu. Кластер получается из одного узла. Полный отчёт с проверками и скриншотами лежит в `README.md` в корне проекта.
 
 ## Что нужно
 
-* Целевая машина с Debian или Ubuntu, процессор x86_64 или aarch64, не меньше 4 ГБ памяти.
-* Доступ по SSH и права sudo.
-* Коллекция `ansible.posix`, её ставит команда `ansible-galaxy collection install ansible.posix`.
-* Доступ машины к `artifacts.opensearch.org` или свой адрес зеркала в параметре `opensearch_download_base_url`.
+* целевая машина с debian или ubuntu, процессор x86_64 или aarch64, не меньше 4 гб памяти.
+* доступ по ssh и права sudo.
+* коллекция `ansible.posix`, её ставит команда `ansible-galaxy collection install ansible.posix`.
+* доступ машины к `artifacts.opensearch.org`.
 
 ## Обязательный параметр
 
-Нужно задать `opensearch_admin_password`. Пароль должен быть сильным, не короче 8 символов, с заглавными и строчными буквами, цифрой и спецсимволом. Без него OpenSearch 3 не запускается. Лучше хранить его в зашифрованном файле.
+Нужно задать `opensearch_admin_password`. Пароль должен быть сильным, не короче 8 символов, с заглавными и строчными буквами, цифрой и спецсимволом. Без него opensearch 3 не запускается. Лучше хранить его в зашифрованном файле.
 
 ```bash
 ansible-vault create group_vars/all/vault.yml
 ```
 
-В файл нужно записать строку `opensearch_admin_password: "ваш пароль"`.
+В файл нужно записать строку `opensearch_admin_password: "your_password"`.
 
 ## Пример плейбука
 
@@ -38,19 +38,18 @@ ansible-vault create group_vars/all/vault.yml
 
 | Параметр | По умолчанию | Смысл |
 |---|---|---|
-| `opensearch_version` | `3.8.0` | Версия обоих продуктов |
-| `opensearch_dashboards_install` | `true` | Ставить ли веб интерфейс |
-| `opensearch_heap_size` | `1g` | Память Java, не больше половины памяти машины |
-| `opensearch_network_host` | `127.0.0.1` | Адрес, на котором слушает OpenSearch |
-| `opensearch_http_port` | `9200` | Порт OpenSearch |
-| `opensearch_dashboards_port` | `5601` | Порт интерфейса |
-| `opensearch_extra_config` | пусто | Любые дополнительные настройки OpenSearch |
-| `opensearch_wait_retries` | `30` | Число проверок готовности |
-| `opensearch_wait_delay` | `10` | Пауза между проверками в секундах |
+| `opensearch_version` | `3.8.0` | версия обоих продуктов |
+| `opensearch_dashboards_install` | `true` | ставить ли веб интерфейс |
+| `opensearch_heap_size` | `1g` | память java, не больше половины памяти машины |
+| `opensearch_network_host` | `127.0.0.1` | адрес, на котором слушает opensearch |
+| `opensearch_http_port` | `9200` | порт opensearch |
+| `opensearch_dashboards_port` | `5601` | порт интерфейса |
+| `opensearch_wait_retries` | `30` | число проверок готовности |
+| `opensearch_wait_delay` | `10` | пауза между проверками в секундах |
 
 ## Теги
 
-Этапы можно запускать по отдельности. Доступны теги `opensearch_assert`, `opensearch_prereqs`, `opensearch_install`, `opensearch_configure`, `opensearch_service`, `opensearch_verify` и `opensearch_dashboards`.
+Этапы можно запускать по отдельности. Доступны теги `opensearch_assert`, `opensearch_prereqs`, `opensearch_install`, `opensearch_configure`, `opensearch_verify` и `opensearch_dashboards`.
 
 ## Проверка
 

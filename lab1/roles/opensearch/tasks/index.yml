@@ -1,0 +1,36 @@
+---
+- name: Configure the index template and the data stream through the REST API
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: admin
+      url_password: "{{ opensearch_admin_password }}"
+      force_basic_auth: true
+      validate_certs: "{{ opensearch_validate_certs }}"
+      body_format: json
+  block:
+    - name: Check whether the index template exists
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_index_template/{{ opensearch_index_template_name }}"
+        status_code: [200, 404]
+      register: opensearch_template_before
+
+    - name: Create or update the index template for the data stream
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_index_template/{{ opensearch_index_template_name }}"
+        method: PUT
+        status_code: [200, 201]
+        body: "{{ lookup('ansible.builtin.template', 'index_template.json.j2') | from_json }}"
+      changed_when: opensearch_template_before.status == 404
+
+    - name: Check whether the data stream exists
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_data_stream/{{ opensearch_data_stream }}"
+        status_code: [200, 404]
+      register: opensearch_stream_before
+
+    - name: Create the data stream
+      ansible.builtin.uri:
+        url: "{{ opensearch_api_url }}/_data_stream/{{ opensearch_data_stream }}"
+        method: PUT
+        status_code: [200, 201]
+      when: opensearch_stream_before.status == 404
